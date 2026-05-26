@@ -44,6 +44,12 @@ scripts/verify-flatpak/verify.sh --download-only
 # Reuse an already-generated flatpak-sources.json (don't re-run Gradle)
 scripts/verify-flatpak/verify.sh --skip-regen
 
+# Tight iteration loop after a failed run: refresh overlay yaml + manifest
+# only, then re-run flatpak-builder. Skips Gradle regen, vid-repo fetch,
+# and Meshtastic-Android rsync. Use when you've just patched the YAML
+# overlay or regenerated flatpak-sources.json by hand.
+scripts/verify-flatpak/verify.sh --rebuild-only
+
 # Cross-arch test via QEMU emulation (slower)
 scripts/verify-flatpak/verify.sh --arch aarch64
 

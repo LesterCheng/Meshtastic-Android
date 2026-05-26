@@ -18,7 +18,13 @@
 #   scripts/verify-flatpak/verify.sh --download-only   # URLs+sha256 only (works on macOS)
 #   scripts/verify-flatpak/verify.sh --arch aarch64    # cross-arch via QEMU emulation
 #   scripts/verify-flatpak/verify.sh --shell           # drop into builder container shell
-#   scripts/verify-flatpak/verify.sh --skip-regen      # reuse existing flatpak-sources.json
+#   scripts/verify-flatpak/verify.sh --skip-regen      # reuse flatpak-sources.json; still re-clone vid + re-rsync source
+#   scripts/verify-flatpak/verify.sh --rebuild-only    # tight loop: refresh overlay+manifest only, then re-run flatpak-builder
+#
+# Iteration tip: after a build fails partway, fix the overlay YAML (or the
+# Meshtastic-Android source) and re-run with --rebuild-only — Gradle regen,
+# vid-repo fetch, and full source rsync are all skipped, so you get straight
+# back to flatpak-builder in seconds.
 
 set -euo pipefail
 
@@ -26,13 +32,15 @@ ARCH="x86_64"
 DROP_TO_SHELL=0
 DOWNLOAD_ONLY=0
 SKIP_REGEN=0
+REBUILD_ONLY=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --arch) ARCH="$2"; shift 2 ;;
         --shell) DROP_TO_SHELL=1; shift ;;
         --download-only) DOWNLOAD_ONLY=1; shift ;;
         --skip-regen) SKIP_REGEN=1; shift ;;
-        -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+        --rebuild-only) REBUILD_ONLY=1; SKIP_REGEN=1; shift ;;
+        -h|--help) sed -n '2,28p' "$0"; exit 0 ;;
         *) echo "Unknown arg: $1" >&2; exit 2 ;;
     esac
 done
@@ -79,29 +87,39 @@ elif [[ ! -f "$SOURCES_JSON" ]]; then
     fail "--skip-regen specified but $SOURCES_JSON does not exist."
 fi
 
-step "Preparing workspace at $WORK"
-mkdir -p "$WORK"
-if [[ ! -d "$WORK/org.meshtastic.desktop/.git" ]]; then
-    git clone --depth 1 --recurse-submodules "$VID_REPO" "$WORK/org.meshtastic.desktop"
+if [[ $REBUILD_ONLY -eq 1 ]]; then
+    [[ -d "$WORK/org.meshtastic.desktop/.git" ]] || \
+        fail "--rebuild-only needs an existing workspace at $WORK; run without it once first."
 else
-    git -C "$WORK/org.meshtastic.desktop" fetch --depth 1 origin main
-    git -C "$WORK/org.meshtastic.desktop" reset --hard origin/main
-    git -C "$WORK/org.meshtastic.desktop" submodule update --init --recursive --depth 1
+    step "Preparing workspace at $WORK"
+    mkdir -p "$WORK"
+    if [[ ! -d "$WORK/org.meshtastic.desktop/.git" ]]; then
+        git clone --depth 1 --recurse-submodules "$VID_REPO" "$WORK/org.meshtastic.desktop"
+    else
+        git -C "$WORK/org.meshtastic.desktop" fetch --depth 1 origin main
+        git -C "$WORK/org.meshtastic.desktop" reset --hard origin/main
+        git -C "$WORK/org.meshtastic.desktop" submodule update --init --recursive --depth 1
+    fi
 fi
 
+# Always refreshed — these are the iteration knobs:
+#   overlay yaml = the manifest we're testing
+#   flatpak-sources.json = the artifact we're validating
 step "Wiring overlay manifest + our flatpak-sources.json"
 cp "$OVERLAY" "$WORK/org.meshtastic.desktop/org.meshtastic.desktop.yaml"
 cp "$SOURCES_JSON" "$WORK/org.meshtastic.desktop/flatpak-sources.json"
 
-step "Snapshotting Meshtastic-Android checkout (excluding build/, .gradle/)"
-rsync -a --delete \
-    --exclude='/build/' \
-    --exclude='/.gradle/' \
-    --exclude='*/build/' \
-    --exclude='*/.gradle/' \
-    --exclude='/.idea/' \
-    --exclude='/local.properties' \
-    "$REPO_ROOT/" "$WORK/org.meshtastic.desktop/meshtastic-android/"
+if [[ $REBUILD_ONLY -eq 0 ]]; then
+    step "Snapshotting Meshtastic-Android checkout (excluding build/, .gradle/)"
+    rsync -a --delete \
+        --exclude='/build/' \
+        --exclude='/.gradle/' \
+        --exclude='*/build/' \
+        --exclude='*/.gradle/' \
+        --exclude='/.idea/' \
+        --exclude='/local.properties' \
+        "$REPO_ROOT/" "$WORK/org.meshtastic.desktop/meshtastic-android/"
+fi
 
 step "Pulling builder image: $BUILDER_IMAGE ($DOCKER_PLATFORM)"
 docker pull --platform "$DOCKER_PLATFORM" "$BUILDER_IMAGE" >/dev/null
