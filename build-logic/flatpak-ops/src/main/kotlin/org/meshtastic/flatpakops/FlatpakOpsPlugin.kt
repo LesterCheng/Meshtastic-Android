@@ -50,12 +50,24 @@ class FlatpakOpsPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         check(target == target.rootProject) { "meshtastic.flatpak-ops must be applied to the root project" }
 
-        val capturedUrls: MutableSet<String> = ConcurrentHashMap.newKeySet()
-        val manager: BuildOperationListenerManager =
-            (target as ProjectInternal).services.get(BuildOperationListenerManager::class.java)
-
-        val listener = OpListener(capturedUrls)
-        manager.addListener(listener)
+        // Prefer the URL set populated by gradle/init-scripts/flatpak-ops.init.gradle.kts.
+        // The init script attaches its listener BEFORE any plugin/project resolution, so it
+        // captures bootstrap downloads (kotlin-dsl plugin marker, build-logic deps) that a
+        // listener registered here would miss. If the init script wasn't passed via -I, we
+        // fall back to a locally-attached listener — incomplete for build-logic deps but
+        // useful for developer debugging.
+        @Suppress("UNCHECKED_CAST")
+        val capturedUrls: MutableSet<String> =
+            (target.gradle.extensions.findByName("flatpakOpsCapturedUrls") as? MutableSet<String>)
+                ?: ConcurrentHashMap.newKeySet<String>().also { fallback ->
+                    val manager =
+                        (target as ProjectInternal).services.get(BuildOperationListenerManager::class.java)
+                    manager.addListener(OpListener(fallback))
+                    target.logger.warn(
+                        "flatpak-ops: init script not loaded; build-logic bootstrap URLs will be missing. " +
+                            "Pass -I gradle/init-scripts/flatpak-ops.init.gradle.kts for a complete manifest.",
+                    )
+                }
 
         val outputProvider = target.layout.buildDirectory.file("flatpak-ops-sources.json")
 

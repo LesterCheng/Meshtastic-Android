@@ -378,6 +378,7 @@ jobs:
         run: >
           ./gradlew --no-build-cache --no-configuration-cache
           -Dgradle.user.home=${{ runner.temp }}/flatpak-gradle-home
+          -I gradle/init-scripts/flatpak-ops.init.gradle.kts
           :desktopApp:assemble :captureFlatpakSources
 
       - name: Stage manifest

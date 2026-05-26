@@ -34,8 +34,15 @@ instead of waiting on cross-repo CI.
 ## Usage
 
 ```bash
-# Full offline build (~10–20 min the first time, faster after — Docker image is cached)
+# Full offline build — Linux host required (~15–30 min first time)
 scripts/verify-flatpak/verify.sh
+
+# URLs + sha256 verification only; skips the Gradle build phase.
+# Works on macOS where nested bwrap fails under Docker Desktop's seccomp.
+scripts/verify-flatpak/verify.sh --download-only
+
+# Reuse an already-generated flatpak-sources.json (don't re-run Gradle)
+scripts/verify-flatpak/verify.sh --skip-regen
 
 # Cross-arch test via QEMU emulation (slower)
 scripts/verify-flatpak/verify.sh --arch aarch64
@@ -43,6 +50,14 @@ scripts/verify-flatpak/verify.sh --arch aarch64
 # Drop into the builder container shell to poke at things
 scripts/verify-flatpak/verify.sh --shell
 ```
+
+### macOS limitation
+
+`flatpak-builder` runs the build phase inside `bwrap` (bubblewrap). Nested
+bwrap fails inside Docker Desktop on macOS with
+`prctl(PR_SET_SECCOMP) EINVAL`. The script refuses to run a full build on
+macOS by default — pass `--download-only` to validate URLs + sha256s without
+executing the Gradle build, or run the full script on a Linux host.
 
 ## Interpreting failures
 
