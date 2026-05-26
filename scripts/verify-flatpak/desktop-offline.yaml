@@ -74,11 +74,11 @@ modules:
       - >
         sed -i
         's/^\(\s*\)vendor\.set(JvmVendorSpec\.JETBRAINS)/\1\/\/ vendor.set(JvmVendorSpec.JETBRAINS)/'
-        desktop/build.gradle.kts
+        desktopApp/build.gradle.kts
       # Force Gradle to resolve from the bundled offline-repository ONLY (true offline test).
-      - ./gradlew --offline :desktop:packageUberJarForCurrentOS
+      - ./gradlew --offline :desktopApp:packageUberJarForCurrentOS
       - >
-        JAR_FILE=$(find desktop/build/compose/jars/ -name "*.jar" -type f | head -1)
+        JAR_FILE=$(find desktopApp/build/compose/jars/ -name "*.jar" -type f | head -1)
         && install -Dm755 "$JAR_FILE" /app/lib/meshtastic-desktop.jar
     sources:
       - type: file
