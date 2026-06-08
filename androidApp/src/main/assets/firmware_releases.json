@@ -189,10 +189,46 @@
   },
   "pullRequests": [
     {
+      "id": "10650",
+      "title": "Add hex picker",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10650",
+      "zip_url": "s"
+    },
+    {
+      "id": "10633",
+      "title": "revert a conflict regression and introduce the DCDC workaround ",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10633",
+      "zip_url": "s"
+    },
+    {
+      "id": "10627",
+      "title": "Add 70cm amateur radio region support",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10627",
+      "zip_url": "s"
+    },
+    {
+      "id": "10625",
+      "title": "Add MVP control point routing module for Meshtastic",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10625",
+      "zip_url": "https://discord.com/invite/meshtastic"
+    },
+    {
+      "id": "10618",
+      "title": "Feat/mesh beacon",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10618",
+      "zip_url": "s"
+    },
+    {
       "id": "10604",
       "title": "Add XIAO ESP32C6 + Wio SX1262 variant with hardware SPI support",
       "page_url": "https://github.com/meshtastic/firmware/pull/10604",
       "zip_url": "https://discord.com/invite/meshtastic"
+    },
+    {
+      "id": "10602",
+      "title": "Mesh node t1 fixes",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10602",
+      "zip_url": "s"
     },
     {
       "id": "10587",
@@ -217,6 +253,18 @@
       "title": "TCA8418 keypad interface optimisations",
       "page_url": "https://github.com/meshtastic/firmware/pull/10568",
       "zip_url": "https://discord.com/invite/meshtastic"
+    },
+    {
+      "id": "10565",
+      "title": "Fix: MQTT topic not updated when LoRa region changes",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10565",
+      "zip_url": "s"
+    },
+    {
+      "id": "10558",
+      "title": "Add T-Beam BPF - 144-148 Mhz LoRa @ ~37 dBm (5 Watts)",
+      "page_url": "https://github.com/meshtastic/firmware/pull/10558",
+      "zip_url": "s"
     }
   ]
 }
